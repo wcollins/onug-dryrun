@@ -5,9 +5,8 @@ terraform {
 
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 3.73"
+      version = ">= 3.75"
     }
-
   }
 
   cloud {
@@ -16,6 +15,6 @@ terraform {
     workspaces {
       name = "aws-networking"
     }
-
   }
+
 }
