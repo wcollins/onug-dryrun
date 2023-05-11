@@ -1,82 +1,33 @@
----
+name: 'Terraform'
 
-name: "Terraform Lint"
-
-# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 on:
   push:
     branches:
-      - main
-  pull_request:
+    - main
+
+env:
+  TF_CLI_ARGS: '-no-color'
+  TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
 
 jobs:
   terraform:
-    name: "Terraform"
+    name: 'Terraform'
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
 
-      # https://github.com/hashicorp/setup-terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-        # TF Cloud - API Token
-        with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+    - name: Terraform Init
+      run: terraform init
 
-      - name: Terraform Init
-        id: init
-        run: terraform init
+    - name: Terraform Plan
+      run: terraform plan
 
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
-
-      # Trigger only on pull request
-      - name: Terraform Plan
-        id: plan
-        if: github.event_name == 'pull_request'
-        run: terraform plan -no-color
-        continue-on-error: true
-
-      # https://github.com/actions/github-script
-      - uses: actions/github-script@0.9.0
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-
-            <details><summary>Show Plan</summary>
-
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
-
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-
-      # https://docs.github.com/en/actions/creating-actions/setting-exit-codes-for-actions
-      - name: Terraform Plan Status
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve
-
-...
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
