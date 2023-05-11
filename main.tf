@@ -69,3 +69,20 @@ resource "aws_security_group" "this" {
   }
 
 }
+
+resource "aws_network_interface_sg_attachment" "this" {
+  security_group_id     = aws_security_group.this.id
+  network_interface_id  = aws_instance.this.primary_network_interface_id
+}
+
+resource "aws_instance" "this" {
+  ami                         = "ami-0f0ba639982a32edb"
+  instance_type               = "t3.nano"
+  subnet_id                   = aws_subnet.this.id
+  associate_public_ip_address = true
+
+  tags    = {
+    Name  = "my-instance"
+  }
+
+}
